@@ -1,4 +1,4 @@
-import { VNodeType } from './vnode';
+import { VNodeType } from './vdom/vnode';
 import { createDOMElement } from './element';
 
 class ComponentWrapper {

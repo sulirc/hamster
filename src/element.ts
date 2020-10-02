@@ -1,41 +1,7 @@
-import {
-  isArray,
-  isString,
-  isNumber,
-  isFunction,
-  isValidElement,
-} from './util';
-import { VNodeType, createVNode, createVText, createVoid } from './vnode';
 import ComponentWrapper from './ComponentWrapper';
-
-export function walkChildrenToGetChildNodes(childNodes, children, type) {
-  if (isArray(children)) {
-    for (let i = 0; i < children.length; i++) {
-      walkChildrenToGetChildNodes(childNodes, children[i], type);
-    }
-  } else if (isString(children) || isNumber(children)) {
-    childNodes.push(createVText(String(children)));
-  } else if (isValidElement(children)) {
-    childNodes.push(children);
-  } else {
-    childNodes.push(createVoid());
-  }
-}
-
-export function h(type, props, children) {
-  const childNodes = [];
-  if (isArray(children)) {
-    walkChildrenToGetChildNodes(childNodes, children, type);
-  } else if (isString(children) || isNumber(children)) {
-    children = createVText(String(children));
-  } else if (!isValidElement(children)) {
-    children = [];
-  }
-
-  props.children = childNodes.length > 0 ? childNodes : children;
-
-  return createVNode(type, props, props.children);
-}
+import { VNodeType } from './vdom/vnode';
+import h from './vdom/h';
+import { isArray, isString, isFunction } from './util';
 
 // 挂载虚拟节点到真实 DOM 环境
 export function mountVNodeToDOM(vnode) {

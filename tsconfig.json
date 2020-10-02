@@ -3,13 +3,13 @@
     "incremental": true,
     "target": "es2017",
     "outDir": "build/main",
-    "rootDir": "src",
+    "jsx": "react",
     "moduleResolution": "node",
     "module": "commonjs",
     "declaration": true,
     "inlineSourceMap": true,
-    "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,
-    "resolveJsonModule": true /* Include modules imported with .json extension. */,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
 
     // "strict": true /* Enable all strict type-checking options. */,
 

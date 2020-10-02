@@ -1,3 +1,3 @@
 # hamster
 
-React Like Framework - Hamster
+🐹 React Like Framework - Hamster

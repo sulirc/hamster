@@ -21,7 +21,7 @@ const webpackDevConfig = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Hamster HTML',
+      template: './index.html'
     }),
   ],
 };

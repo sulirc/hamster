@@ -192,9 +192,32 @@ export function useMemo(func: Function, guards?: Array<any>) {
   return memoization[0];
 }
 
-export function useCallback() {}
+export function useCallback(func: Function, guards?: Array<any>) {
+  const bucket = getCurrentBucket();
 
-export function useRef() {}
+  if (!bucket) {
+    throw new Error(
+      'useCallback() only valid inside an Articulated Function or a Custom Hook.'
+    );
+  }
+
+  return useMemo(function callback() {
+    return func;
+  }, guards);
+}
+
+export function useRef(initialVal: any) {
+  const bucket = getCurrentBucket();
+
+  if (!bucket) {
+    throw new Error(
+      'useRef() only valid inside an Articulated Function or a Custom Hook.'
+    );
+  }
+
+  const [ref] = useState({ current: initialVal });
+  return ref;
+}
 
 function guardsChanged(guards1: any, guards2: any): boolean {
   if (guards1 === undefined || guards2 === undefined) {

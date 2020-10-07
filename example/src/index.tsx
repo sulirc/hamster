@@ -13,8 +13,9 @@ function updateCounter(prevCount, val) {
   return prevCount + val;
 }
 
+let id = 0;
 function getString() {
-  return Math.random().toString(16).slice(2, 10).toUpperCase();
+  return `Unique String Id - ${id++}`;
 }
 
 // function hit(amount = 1) {
@@ -29,30 +30,46 @@ function computedWhatWrongWithYou() {
   return 'You are OK';
 }
 
+const initialString = getString();
 function hit(amount = 1) {
   const [count, setCount] = useState(0);
-  const [str, setString] = useState(getString());
+  const [str, setString] = useState(initialString);
   // setCount(prev => prev + amount);
   const nextString = getString();
   setCount(amount);
   setString(nextString);
 
-  const answer = useMemo(computedWhatWrongWithYou);
-  console.log('What\'s wrong with you? ', answer)
+  console.log(`! State value count: ${count}`);
+  console.log(`! State value str: ${str}`);
 
-  function handleClick() {
-    console.log(`Hey, I am a console log effect! - ${str}`);
-  }
+  // const answer = useMemo(computedWhatWrongWithYou);
+  // console.log("What's wrong with you? ", answer);
 
-  useEffect(() => {
-    window.addEventListener('click', handleClick);
-    return () => {
-      window.removeEventListener('click', handleClick);
-    };
-  }, [str]);
+  // function showEffect() {
+  //   console.log(`Hey, I am a console log effect! - ${str}`);
+  // }
 
-  console.log(`State value count: ${count}`);
-  console.log(`State value str: ${str}`);
+  // const cb = useCallback(
+  //   function changeableFunc() {
+  //     console.log(`I am changeable! - ${str}`);
+  //   },
+  //   ['Fake Guards']
+  // );
+
+  // cb();
+
+  const strRef = useRef(str);
+
+  console.log('unique string ref:', strRef);
+
+  // useEffect(() => {
+  //   window.addEventListener('click', showEffect);
+  //   return () => {
+  //     window.removeEventListener('click', showEffect);
+  //   };
+  // }, [str]);
+
+  console.log('===========================');
 }
 
 const hitWithContext = createHC(hit);

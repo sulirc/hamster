@@ -1,23 +1,32 @@
 import React from '../../src';
-import { createHookContext, useReducer } from '../../src/hooks';
+import { wrapHookContext, useReducer, useState } from '../../src/hooks';
 
-function hit(amount = 1) {
-  var [count,incCounter] = useReducer(updateCounter,0);
-  incCounter(amount);
-
-  console.log(`Hit count: ${count+amount}`);
-}
-
-function updateCounter(prevCount,val) {
+function updateCounter(prevCount, val) {
   return prevCount + val;
 }
 
-const _hit = createHookContext(hit);
+// useReducer
+// function hit(amount = 1) {
+//   var [count,incCounter] = useReducer(updateCounter,0);
+//   incCounter(amount);
 
-_hit();       // Hit count: 1
-_hit();       // Hit count: 2
-_hit(8);      // Hit count: 10
+//   console.log(`Hit count: ${count+amount}`);
+// }
 
+// useState
+function hit(amount = 1) {
+  var [count, setCount] = useState(0);
+  setCount(amount);
+
+   console.log(`Set count: ${count}`);
+}
+
+const _hit = wrapHookContext(hit);
+// debugger
+_hit(2);
+_hit(4);
+_hit(8);
+_hit(16);
 
 class HelloMessage extends React.Component {
   render() {
@@ -35,17 +44,16 @@ class HelloMessage extends React.Component {
   }
 }
 
-//@ts-ignore
+// @ts-ignore
 React.render(<HelloMessage />, document.body);
 
-
-interface Props {
-  [prop: string]: any;
-  ref?: React.Ref<any>;
-}
 // import React, { useState, useRef, useEffect } from 'react';
 // import ReactDOM from 'react-dom';
 
+// interface Props {
+//   [prop: string]: any;
+//   ref?: React.Ref<any>;
+// }
 // const ChildComponent = React.forwardRef((_: Props, ref: any) => {
 //   useState('foo');
 //   useState('bar');

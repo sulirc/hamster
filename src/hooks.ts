@@ -39,7 +39,7 @@ function getCurrentBucket() {
   return null;
 }
 
-export function createHookContext(func: Function) {
+export function wrapHookContext(func: Function) {
   function wrapper(...args: any) {
     stack.push(func);
 
@@ -63,7 +63,18 @@ export function createHookContext(func: Function) {
   return wrapper;
 }
 
-export function useState() {}
+export function useState(initialVal: any) {
+  const bucket = getCurrentBucket();
+  if (bucket) {
+    return useReducer(function reducer(preVal: any, vOrFn: any) {
+      return typeof vOrFn == 'function' ? vOrFn(preVal) : vOrFn;
+    }, initialVal);
+  } else {
+    throw new Error(
+      'useState() only valid inside an Articulated Function or a Custom Hook.'
+    );
+  }
+}
 
 export function useReducer(
   reducerFn: Function,

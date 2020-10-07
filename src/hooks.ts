@@ -3,25 +3,25 @@
  */
 
 type StateSlot = [any, Function];
+type Effect = [Function, any[]];
 
 interface IBucket {
   nextStateSlotIdx: number;
   nextEffectIdx: number;
   nextMemoizationIdx: number;
   stateSlots: StateSlot[];
-  effects: any[];
-  cleanups: any[];
+  effects: Effect[];
+  cleanups: Function[];
   memoizations: any[];
 }
 
 const buckets = new WeakMap<Function, IBucket>();
-const stack: Function[] = [];
+const runtimeStack: Function[] = [];
 
-// 获取当前函数堆栈中最末尾的函数对应的对象桶
 function getCurrentBucket() {
-  if (stack.length > 0) {
+  if (runtimeStack.length > 0) {
     let bucket: IBucket;
-    const func = stack[stack.length - 1];
+    const func = runtimeStack[runtimeStack.length - 1];
 
     if (!buckets.has(func)) {
       bucket = {
@@ -41,8 +41,8 @@ function getCurrentBucket() {
 }
 
 export function createHC(func: Function) {
-  function wrapper(...args: any) {
-    stack.push(func);
+  function HOF(...args: any) {
+    runtimeStack.push(func);
 
     const bucket = getCurrentBucket();
 
@@ -56,13 +56,12 @@ export function createHC(func: Function) {
       try {
         runEffects(bucket);
       } finally {
-        stack.pop();
+        runtimeStack.pop();
       }
     }
 
     function runEffects(bucket: IBucket) {
       for (let [idx, [effect, guards]] of bucket.effects.entries()) {
-
         try {
           if (typeof effect === 'function') {
             effect();
@@ -74,20 +73,21 @@ export function createHC(func: Function) {
     }
   }
 
-  return wrapper;
+  return HOF;
 }
 
 export function useState(initialVal: any) {
   const bucket = getCurrentBucket();
-  if (bucket) {
-    return useReducer(function reducer(preVal: any, vOrFn: any) {
-      return typeof vOrFn == 'function' ? vOrFn(preVal) : vOrFn;
-    }, initialVal);
-  } else {
+
+  if (!bucket) {
     throw new Error(
       'useState() only valid inside an Articulated Function or a Custom Hook.'
     );
   }
+
+  return useReducer(function reducer(preVal: any, vOrFn: any) {
+    return typeof vOrFn == 'function' ? vOrFn(preVal) : vOrFn;
+  }, initialVal);
 }
 
 export function useReducer(
@@ -97,67 +97,100 @@ export function useReducer(
 ) {
   const bucket = getCurrentBucket();
 
-  if (bucket) {
-    if (!(bucket.nextStateSlotIdx in bucket.stateSlots)) {
-      const slot: StateSlot = [
-        typeof initialVal == 'function' ? initialVal() : initialVal,
-        function updateSlot(v: unknown) {
-          slot[0] = reducerFn(slot[0], v);
-        },
-      ];
-      bucket.stateSlots[bucket.nextStateSlotIdx] = slot;
-
-      if (initialReduction.length > 0) {
-        bucket.stateSlots[bucket.nextStateSlotIdx][1](initialReduction[0]);
-      }
-    }
-
-    return [...bucket.stateSlots[bucket.nextStateSlotIdx++]];
-  } else {
+  if (!bucket) {
     throw new Error(
       'useReducer() only valid inside an Articulated Function or a Custom Hook.'
     );
   }
+
+  if (!(bucket.nextStateSlotIdx in bucket.stateSlots)) {
+    const slot: StateSlot = [
+      typeof initialVal == 'function' ? initialVal() : initialVal,
+      function updateSlot(v: unknown) {
+        slot[0] = reducerFn(slot[0], v);
+      },
+    ];
+    bucket.stateSlots[bucket.nextStateSlotIdx] = slot;
+
+    if (initialReduction.length > 0) {
+      bucket.stateSlots[bucket.nextStateSlotIdx][1](initialReduction[0]);
+    }
+  }
+
+  return [...bucket.stateSlots[bucket.nextStateSlotIdx++]];
 }
 
-export function useEffect(effectFn: Function, guards?: Array<any>) {
+export function useEffect(func: Function, guards?: Array<any>) {
   const bucket = getCurrentBucket();
 
-  if (bucket) {
-    if (!(bucket.nextEffectIdx in bucket.effects)) {
-      bucket.effects[bucket.nextEffectIdx] = [];
-    }
-
-    const effectIdx = bucket.nextEffectIdx;
-    const effect = bucket.effects[effectIdx];
-
-    if (guardsChanged(effect[1], guards)) {
-      effect[0] = function effect() {
-        // 执行上一次的 cleanup 函数
-        if (typeof bucket.cleanups[effectIdx] === 'function') {
-          try {
-            bucket.cleanups[effectIdx]();
-          } finally {
-            bucket.cleanups[effectIdx] = undefined;
-          }
-        }
-
-        const ret = effectFn();
-        // 保存当前的 cleanup 函数
-        if (typeof ret === 'function') {
-          bucket.cleanups[effectIdx] = ret;
-        }
-      };
-      effect[1] = guards;
-    }
-  } else {
+  if (!bucket) {
     throw new Error(
       'useEffect() only valid inside an Articulated Function or a Custom Hook.'
     );
   }
+
+  if (!(bucket.nextEffectIdx in bucket.effects)) {
+    bucket.effects[bucket.nextEffectIdx] = [undefined, undefined];
+  }
+
+  const effectIdx = bucket.nextEffectIdx;
+  const effect = bucket.effects[effectIdx];
+
+  if (guardsChanged(effect[1], guards)) {
+    effect[0] = function effect() {
+      if (typeof bucket.cleanups[effectIdx] === 'function') {
+        try {
+          bucket.cleanups[effectIdx]();
+        } finally {
+          bucket.cleanups[effectIdx] = undefined;
+        }
+      }
+
+      const ret = func();
+
+      if (typeof ret === 'function') {
+        bucket.cleanups[effectIdx] = ret;
+      }
+    };
+    effect[1] = guards;
+  }
 }
 
-export function useMemo() {}
+export function useMemo(func: Function, guards?: Array<any>) {
+  let realGuards: Array<any>;
+
+  if (guards && guards.length > 0) {
+    realGuards = guards;
+  } else {
+    realGuards = [func];
+  }
+
+  const bucket = getCurrentBucket();
+
+  if (!bucket) {
+    throw new Error(
+      'useMemo() only valid inside an Articulated Function or a Custom Hook.'
+    );
+  }
+
+  if (!(bucket.nextMemoizationIdx in bucket.memoizations)) {
+    bucket.memoizations[bucket.nextMemoizationIdx] = [];
+  }
+
+  const memoization = bucket.memoizations[bucket.nextMemoizationIdx];
+
+  if (guardsChanged(memoization[1], realGuards)) {
+    try {
+      memoization[0] = func();
+    } finally {
+      memoization[1] = realGuards;
+    }
+  }
+
+  bucket.nextMemoizationIdx++;
+
+  return memoization[0];
+}
 
 export function useCallback() {}
 

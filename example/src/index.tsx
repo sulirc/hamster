@@ -1,5 +1,13 @@
 import React from '../../src';
-import { createHC, useReducer, useState, useEffect } from '../../src/hooks';
+import {
+  createHC,
+  useReducer,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from '../../src/hooks';
 
 function updateCounter(prevCount, val) {
   return prevCount + val;
@@ -16,19 +24,27 @@ function getString() {
 //   console.log(`Hit count: ${count+amount}`);
 // }
 
+function computedWhatWrongWithYou() {
+  console.log('Computing...');
+  return 'You are OK';
+}
 
 function hit(amount = 1) {
-  var [count, setCount] = useState(0);
-  var [str, setString] = useState(getString());
+  const [count, setCount] = useState(0);
+  const [str, setString] = useState(getString());
   // setCount(prev => prev + amount);
   const nextString = getString();
   setCount(amount);
   setString(nextString);
 
+  const answer = useMemo(computedWhatWrongWithYou);
+  console.log('What\'s wrong with you? ', answer)
+
+  function handleClick() {
+    console.log(`Hey, I am a console log effect! - ${str}`);
+  }
+
   useEffect(() => {
-    function handleClick() {
-      console.log(`Hey, I am a console log effect! - ${str}`);
-    }
     window.addEventListener('click', handleClick);
     return () => {
       window.removeEventListener('click', handleClick);

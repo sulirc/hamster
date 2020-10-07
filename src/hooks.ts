@@ -2,13 +2,13 @@
  * Reference Doc: https://github.com/getify/TNG-Hooks/blob/master/src/tng-hooks.src.js
  */
 
-type TypeStateSlot = [any, Function];
+type StateSlot = [any, Function];
 
 interface IBucket {
   nextStateSlotIdx: number;
   nextEffectIdx: number;
   nextMemoizationIdx: number;
-  stateSlots: TypeStateSlot[];
+  stateSlots: StateSlot[];
   effects: Function[];
   cleanups: Function[];
   memoizations: Function[];
@@ -39,7 +39,7 @@ function getCurrentBucket() {
   return null;
 }
 
-export function wrapHookContext(func: Function) {
+export function createHC(func: Function) {
   function wrapper(...args: any) {
     stack.push(func);
 
@@ -85,9 +85,9 @@ export function useReducer(
 
   if (bucket) {
     if (!(bucket.nextStateSlotIdx in bucket.stateSlots)) {
-      const slot: TypeStateSlot = [
+      const slot: StateSlot = [
         typeof initialVal == 'function' ? initialVal() : initialVal,
-        function updateSlot(v) {
+        function updateSlot(v: unknown) {
           slot[0] = reducerFn(slot[0], v);
         },
       ];
@@ -106,7 +106,9 @@ export function useReducer(
   }
 }
 
-export function useEffect() {}
+export function useEffect() {
+
+}
 
 export function useMemo() {}
 

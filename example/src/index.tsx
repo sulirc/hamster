@@ -1,8 +1,12 @@
 import React from '../../src';
-import { wrapHookContext, useReducer, useState } from '../../src/hooks';
+import { createHC, useReducer, useState } from '../../src/hooks';
 
 function updateCounter(prevCount, val) {
   return prevCount + val;
+}
+
+function getString() {
+  return Math.random().toString(16).slice(2, 10).toUpperCase();
 }
 
 // useReducer
@@ -14,27 +18,47 @@ function updateCounter(prevCount, val) {
 // }
 
 // useState
-function hit(amount = 1) {
-  var [count, setCount] = useState(0);
-  setCount(amount);
+// function hit(amount = 1) {
+//   var [count, setCount] = useState(0);
+//   var [str, setString] = useState(getString());
+//   // setCount(prev => prev + amount);
+//   setCount(amount);
+//   setString(getString())
 
-   console.log(`Set count: ${count}`);
+//   console.log(`State value count: ${count}`);
+//   console.log(`State value str: ${str}`);
+// }
+
+// const _hit = createHC(hit);
+
+// _hit(2);
+// _hit(4);
+// _hit(8);
+// _hit(16);
+
+function Blackboard() {
+  const [str, setString] = useState(getString());
+
+  function updateBlackboard() {
+    setString(getString())
+  }
+
+  return (
+    <div className="blackboard">
+      <div>Blackboard: {str}</div>
+      <button onClick={updateBlackboard}>Write</button>
+    </div>
+  );
 }
 
-const _hit = wrapHookContext(hit);
-// debugger
-_hit(2);
-_hit(4);
-_hit(8);
-_hit(16);
+const BlackboardHOC = createHC(Blackboard);
 
 class HelloMessage extends React.Component {
   render() {
     const textNode = (
       <div>
         <h1>Hey Hamster</h1>
-        <p>count: 0</p>
-        <button>Increase</button>
+        <BlackboardHOC />
       </div>
     );
 

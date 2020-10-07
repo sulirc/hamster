@@ -1,5 +1,5 @@
 import React from '../../src';
-import { createHC, useReducer, useState } from '../../src/hooks';
+import { createHC, useReducer, useState, useEffect } from '../../src/hooks';
 
 function updateCounter(prevCount, val) {
   return prevCount + val;
@@ -9,7 +9,6 @@ function getString() {
   return Math.random().toString(16).slice(2, 10).toUpperCase();
 }
 
-// useReducer
 // function hit(amount = 1) {
 //   var [count,incCounter] = useReducer(updateCounter,0);
 //   incCounter(amount);
@@ -17,30 +16,41 @@ function getString() {
 //   console.log(`Hit count: ${count+amount}`);
 // }
 
-// useState
-// function hit(amount = 1) {
-//   var [count, setCount] = useState(0);
-//   var [str, setString] = useState(getString());
-//   // setCount(prev => prev + amount);
-//   setCount(amount);
-//   setString(getString())
 
-//   console.log(`State value count: ${count}`);
-//   console.log(`State value str: ${str}`);
-// }
+function hit(amount = 1) {
+  var [count, setCount] = useState(0);
+  var [str, setString] = useState(getString());
+  // setCount(prev => prev + amount);
+  const nextString = getString();
+  setCount(amount);
+  setString(nextString);
 
-// const _hit = createHC(hit);
+  useEffect(() => {
+    function handleClick() {
+      console.log(`Hey, I am a console log effect! - ${str}`);
+    }
+    window.addEventListener('click', handleClick);
+    return () => {
+      window.removeEventListener('click', handleClick);
+    };
+  }, [str]);
 
-// _hit(2);
-// _hit(4);
-// _hit(8);
-// _hit(16);
+  console.log(`State value count: ${count}`);
+  console.log(`State value str: ${str}`);
+}
+
+const hitWithContext = createHC(hit);
+
+hitWithContext(2);
+hitWithContext(4);
+hitWithContext(8);
+hitWithContext(16);
 
 function Blackboard() {
   const [str, setString] = useState(getString());
 
   function updateBlackboard() {
-    setString(getString())
+    setString(getString());
   }
 
   return (
@@ -62,44 +72,9 @@ class HelloMessage extends React.Component {
       </div>
     );
 
-    console.log('<div vnode>', textNode);
-
     return textNode;
   }
 }
 
 // @ts-ignore
 React.render(<HelloMessage />, document.body);
-
-// import React, { useState, useRef, useEffect } from 'react';
-// import ReactDOM from 'react-dom';
-
-// interface Props {
-//   [prop: string]: any;
-//   ref?: React.Ref<any>;
-// }
-// const ChildComponent = React.forwardRef((_: Props, ref: any) => {
-//   useState('foo');
-//   useState('bar');
-//   useState('baz');
-
-//   return <div ref={ref}>Hey</div>;
-// });
-
-// const ParentComponent: React.FC = () => {
-//   const childFiberRef = useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     // let hookNode = (childFiberRef.current as any).memoizedState;
-
-//     console.log(childFiberRef);
-//     // hookNode = hookNode.next;
-//     // console.log(hookNode.memoizedState);
-//     // hookNode = hookNode.next;
-//     // console.log(hookNode.memoizedState);
-//   });
-
-//   return <ChildComponent ref={childFiberRef} />;
-// };
-
-// ReactDOM.render(<ParentComponent />, document.getElementById('root'));

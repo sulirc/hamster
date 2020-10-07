@@ -9,14 +9,15 @@ interface IBucket {
   nextEffectIdx: number;
   nextMemoizationIdx: number;
   stateSlots: StateSlot[];
-  effects: Function[];
-  cleanups: Function[];
-  memoizations: Function[];
+  effects: any[];
+  cleanups: any[];
+  memoizations: any[];
 }
 
 const buckets = new WeakMap<Function, IBucket>();
 const stack: Function[] = [];
 
+// 获取当前函数堆栈中最末尾的函数对应的对象桶
 function getCurrentBucket() {
   if (stack.length > 0) {
     let bucket: IBucket;
@@ -53,9 +54,22 @@ export function createHC(func: Function) {
       return func.apply(this, args);
     } finally {
       try {
-        // runEffects(bucket)
+        runEffects(bucket);
       } finally {
         stack.pop();
+      }
+    }
+
+    function runEffects(bucket: IBucket) {
+      for (let [idx, [effect, guards]] of bucket.effects.entries()) {
+
+        try {
+          if (typeof effect === 'function') {
+            effect();
+          }
+        } finally {
+          bucket.effects[idx][0] = undefined;
+        }
       }
     }
   }
@@ -106,8 +120,41 @@ export function useReducer(
   }
 }
 
-export function useEffect() {
+export function useEffect(effectFn: Function, guards?: Array<any>) {
+  const bucket = getCurrentBucket();
 
+  if (bucket) {
+    if (!(bucket.nextEffectIdx in bucket.effects)) {
+      bucket.effects[bucket.nextEffectIdx] = [];
+    }
+
+    const effectIdx = bucket.nextEffectIdx;
+    const effect = bucket.effects[effectIdx];
+
+    if (guardsChanged(effect[1], guards)) {
+      effect[0] = function effect() {
+        // 执行上一次的 cleanup 函数
+        if (typeof bucket.cleanups[effectIdx] === 'function') {
+          try {
+            bucket.cleanups[effectIdx]();
+          } finally {
+            bucket.cleanups[effectIdx] = undefined;
+          }
+        }
+
+        const ret = effectFn();
+        // 保存当前的 cleanup 函数
+        if (typeof ret === 'function') {
+          bucket.cleanups[effectIdx] = ret;
+        }
+      };
+      effect[1] = guards;
+    }
+  } else {
+    throw new Error(
+      'useEffect() only valid inside an Articulated Function or a Custom Hook.'
+    );
+  }
 }
 
 export function useMemo() {}

@@ -1,6 +1,6 @@
-import HtmlWebpackPlugin from 'html-webpack-plugin';
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const webpackDevConfig = {
+module.exports = {
   mode: 'development',
   entry: './src/index.tsx',
   module: {
@@ -21,9 +21,7 @@ const webpackDevConfig = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './index.html'
+      template: './index.html',
     }),
   ],
 };
-
-export default webpackDevConfig;
